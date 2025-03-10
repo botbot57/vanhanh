@@ -1,0 +1,13 @@
+- name: Clone multiple VMs with continuous datastore space check
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - vars.yml
+    - var_host.yml
+    - var_vm.yml
+  tasks:
+    - name: Clone each VM with datastore space check
+      include_tasks: clone_vm_block_3.yml
+      loop: "{{ vm_list }}"
+      loop_control:
+        label: "{{ item.name }}"
