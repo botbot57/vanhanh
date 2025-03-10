@@ -1,0 +1,4 @@
+vm_list:
+  - name: "VM1"
+  - name: "VM2"
+  - name: "VM3"
