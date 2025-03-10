@@ -1,0 +1,31 @@
+vm_list:
+  - name: "VM1"
+    datastore: "datastore1"
+    folder_vm: "FD1"
+    vm_cpu: 1
+    vm_memory: 3
+    ip: "192.168.0.125"
+    netmask: "255.255.255.0"
+    gateway: "192.168.0.1"
+    dns: "8.8.8.8"
+
+  - name: "VM2"
+    datastore: "datastore2"
+    folder_vm: "FD2"
+    vm_template: "temp-redhat"
+    ip: "192.168.0.126"
+    netmask: "255.255.255.0"
+    gateway: "192.168.0.1"
+    dns: "8.8.8.8"
+    vm_cpu: 4
+    vm_memory: 6
+  - name: "VM3"
+    datastore: "datastore3"
+    folder_vm: "FD1"
+    vm_template: "temp-ubuntu"
+    vm_cpu: 3
+    vm_memory: 3	
+    ip: "192.168.0.127"
+    netmask: "255.255.255.0"
+    gateway: "192.168.0.1"
+    dns: "8.8.8.8"
