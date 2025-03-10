@@ -1,0 +1,18 @@
+folder_vm: "Discovered virtual machine"
+vm-temp: "redhat89"
+vm_list:
+  - name: "VM1"
+    memory_mb: 4096
+    num_cpus: 2
+    network: "DMZ-VLAN220-10.2.220.0"
+    ip: "192.168.1.10"
+    netmask: "255.255.255.0"
+    gateway: "192.168.1.1"
+
+  - name: "VM7"
+    memory_mb: 8192
+    num_cpus: 4
+    network: "DMZ-VLAN220-10.2.220.0"
+    ip: "192.168.1.11"
+    netmask: "255.255.255.0"
+    gateway: "192.168.1.1"
