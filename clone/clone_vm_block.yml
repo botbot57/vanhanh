@@ -1,0 +1,106 @@
+- block:
+    - name: Run Python script to fetch ESXi data
+      shell: >
+        python3 get_esxi_cpu_info_1.py --vcenter_host "{{ vcenter_hostname }}"
+        --vcenter_user "{{ vcenter_username }}" --vcenter_password "{{ vcenter_password }}"
+        --esxi_host "{{ item.ip }}"
+      loop: "{{ host_esxi }}"
+      register: host_facts
+      changed_when: false  # Tránh báo cáo thay đổi nếu chỉ thu thập thông tin
+
+    - name: Initialize esxi_info list if not defined
+      set_fact:
+        esxi_info: []
+      when: esxi_info is not defined
+
+    - name: Collect ESXi and datastore information
+      set_fact:
+        esxi_info: >-
+          {{ esxi_info + [{
+              "esxi_host": (item.stdout | from_json).esxi_host,
+              "cpu_usage_percent": (item.stdout | from_json).cpu_usage_percent | default(0),
+              "memory_usage_percent": (item.stdout | from_json).memory_usage_percent | default(0),
+              "datastore_name": (item.stdout | from_json).datastores[0].name | default("Unknown"),
+              "capacity_gb": (item.stdout | from_json).datastores[0].capacity_gb | default(0),
+              "free_space_gb": (item.stdout | from_json).datastores[0].free_space_gb | default(0),
+              "used_space_gb": (item.stdout | from_json).datastores[0].used_space_gb | default(0),
+              "provisioned_space_gb": (item.stdout | from_json).datastores[0].provisioned_space_gb | default(0)
+            }]
+          }}
+      when:
+        - item.stdout is defined
+        - item.stdout | from_json is mapping
+        - (item.stdout | from_json).datastores is defined
+        - (item.stdout | from_json).datastores | length > 0
+      loop: "{{ host_facts.results }}"
+
+    - name: Debug collected ESXi information
+      debug:
+        var: esxi_info
+
+    - name: Sort ESXI info by free space
+      set_fact:
+        esxi_info_sorted: "{{ esxi_info | sort(attribute='free_space_gb', reverse=true) }}"
+
+    - name: Filter ESXi hosts based on CPU and memory conditions
+      set_fact:
+        filtered_esxi: "{{ esxi_info_sorted | selectattr('cpu_usage_percent', '<', 50)
+                                            | selectattr('memory_usage_percent', '<', 50)
+                                            | selectattr('provisioned_space_gb', '<', item.capacity_gb * 4)
+                                            | list }}"
+      loop: "{{ esxi_info_sorted }}"
+
+    - name: Debug filtered ESXi hosts
+      debug:
+        var: filtered_esxi
+
+    - name: Ask user if they want to create VM with collected ESXi information
+      pause:
+        prompt: |
+          Do you want to create a VM with the following ESXi details? (yes/no)
+          ESXi Host: {{ filtered_esxi[0].esxi_host }}
+          Datastore: {{ filtered_esxi[0].datastore_name }}
+          Free Space: {{ filtered_esxi[0].free_space_gb }} GB
+          CPU Usage: {{ filtered_esxi[0].cpu_usage_percent }}%
+          Memory Usage: {{ filtered_esxi[0].memory_usage_percent }}%
+          Provisioned Space: {{ (filtered_esxi[0].provisioned_space_gb / filtered_esxi[0].capacity_gb) * 100 }}%
+      register: user_input
+
+    - name: Check user response
+      set_fact:
+        create_vm: "{{ user_input.user_input | lower == 'yes' }}"
+
+    - name: Debug user decision
+      debug:
+        msg: "User chose to create VM: {{ create_vm }}"
+
+    - name: Clone VM
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ datacenter_name }}"
+        folder: "Discovered virtual machine"
+        state: poweredon
+#        resource_pool: "{{ resource_pool }}"
+        name: "{{ item.name }}"
+        template: "redhat89"
+        hardware:
+          memory_mb: "{{ item.memory_mb }}"
+          num_cpus: "{{ item.num_cpus }}"
+        datastore: "{{ filtered_esxi[0].datastore_name }}"
+        esxi_hostname: "{{ filtered_esxi[0].esxi_host }}"
+        networks:
+          - name: "{{ item.network }}"
+            ip: "{{ item.ip }}"
+            netmask: "{{ item.netmask }}"
+            gateway: "{{ item.gateway }}"
+        wait_for_ip_address: yes
+
+    - name: Reset all registered variables
+      set_fact:
+        host_facts: null
+        esxi_info: []
+        esxi_info_sorted: null
+        filtered_esxi: null
