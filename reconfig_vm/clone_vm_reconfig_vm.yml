@@ -1,0 +1,60 @@
+- name: Clone multiple VMs and configure IPs
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - var.yml
+    - var_vm1.yml
+  serial: 3
+
+  tasks:
+    # 1. Clone multiple VMs concurrently with limited parallelism
+    - name: Clone VMs
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ datacenter_name }}"
+        folder: "{{ folder_vm }}"
+#        state: poweredon
+        name: "{{ item.name }}"
+        template: "{{ vm_template }}"
+        hardware:
+          num_cpus: "{{ item.vm_cpu }}"
+          hotadd_cpu: true
+          num_cpu_cores_per_socket: "{{ item.cpu_cores_per_socket }}"
+          memory_mb: "{{ item.vm_memory }}"
+          hotadd_memory: true
+
+#        networks:
+#          - name: "{{ item.network }}"
+#            ip: "{{ item.ip }}"
+#            netmask: "{{ item.netmask }}"
+#            gateway: "{{ item.gateway }}"
+#        wait_for_ip_address: no  # Không chờ IP, chỉ tạo VM
+#      async: 600
+#      poll: 0
+      loop: "{{ vm_list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: vm_clone_jobs
+    - name: expand disk
+      community.vmware.vmware_guest_disk:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        validate_certs: no
+        datacenter: "{{ datacenter_name }}"
+        folder: "{{ folder_vm }}"
+#        state: poweredon
+        name: "{{ item.name }}"
+        disk:
+          - size_gb: "{{ item.vm_disk }}"
+            type: "{{ item.vm_disk_type }}"
+            datastore: "{{ item.datastore_name }}"
+            state: present
+            scsi_controller: "{{ item.vm_disk_scsi_controller }}"
+            unit_number: "{{ item.vm_disk_unit }}"
+            scsi_type: "{{ item.vm_disk_scsi_type }}"
+      loop: "{{ vm_list }}"
+  
