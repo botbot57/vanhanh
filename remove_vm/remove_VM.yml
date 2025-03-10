@@ -1,0 +1,22 @@
+---
+- name: delete vm on esxi
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - vars.yml
+    - var_remove_vm.yml
+  tasks:
+    - name: deletevm
+      community.vmware.vmware_guest:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        datastore: "{{ item.datastore }}"
+        validate_certs: false
+        name: "{{ item.VM }}"
+        state: absent
+      delegate_to: localhost
+      loop: "{{ vm_list }}
+
+
+
