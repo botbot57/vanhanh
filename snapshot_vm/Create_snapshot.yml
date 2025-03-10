@@ -1,0 +1,23 @@
+---
+- name: Create Snapshot for VM on ESXi
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Create snapshot for the VM
+      community.vmware.vmware_guest_snapshot:
+        hostname: "{{ vcenter_hostname }}"
+        username: "{{ vcenter_username }}"
+        password: "{{ vcenter_password }}"
+        datacenter: "{{ datacenter_name }}"
+        folder: "{{ folder_vm }}"
+        validate_certs: no
+        name: "{{ item.name }}" 
+        snapshot_name: "snapshot1"  
+        state: present  
+        description: "Snapshot created by Ansible"
+#        memory: true
+      loop: "{{ vm_list }}"
+      delegate_to: localhost
+
