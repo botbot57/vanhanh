@@ -1,0 +1,32 @@
+vm_template: "tmp-coreos-14.34"
+vm_state: powered-off
+folder_vm: "GTEL-OCP-HAINH"
+
+vm_list:
+  - name: "master01"
+    vm_memory: 16384
+    vm_cpu: 8
+    cpu_cores_per_socket: 4
+    network: "DMZ-VLAN220-10.2.220.0"
+    datastore_name: "DS-LOCAL-10.2.220.26"
+    vm_disk: 20
+    vm_disk_type: thin
+    vm_disk_scsi_controller: 0
+    vm_disk_unit: 0 
+    vm_disk_scsi_type: 'paravirtual'  
+
+
+  - name: "master02"
+    vm_memory: 16384
+    vm_cpu: 8
+    cpu_cores_per_socket: 4
+    network: "DMZ-VLAN220-10.2.220.0"
+    datastore_name: "DS-LOCAL-10.2.220.26"
+    vm_disk: 20
+    vm_disk_type: thin
+    vm_disk_scsi_controller: 0
+    vm_disk_unit: 0
+    vm_disk_scsi_type: 'paravirtual'
+
+    
+    
